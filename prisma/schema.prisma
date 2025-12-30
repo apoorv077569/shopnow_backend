@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String        @id @default(uuid())
+  name          String
+  email         String        @unique
+  passwordHash  String?
+  provider      AuthProvider
+  googleId      String?
+  profileImage  String?
+
+  cartItems     CartItem[]
+  orders        Order[]
+  addresses     Address[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  products  Product[]
+}
+
+model Product {
+  id              String      @id @default(uuid())
+  name            String
+  description     String?
+  price           Float
+  originalPrice   Float
+  discountPercent Int
+  imageUrl        String
+  stock           Int
+
+  categoryId      String
+  category        Category    @relation(fields: [categoryId], references: [id])
+
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  quantity  Int
+
+  userId    String
+  productId String
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model Address {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  phone     String
+  street    String
+  city      String
+  state     String
+  zipCode   String
+  isDefault Boolean  @default(false)
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Order {
+  id          String       @id @default(uuid())
+  userId      String
+  totalAmount Float
+  status      OrderStatus
+
+  user        User         @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+
+  createdAt   DateTime     @default(now())
+}
+
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String
+  price     Float
+  quantity  Int
+
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
